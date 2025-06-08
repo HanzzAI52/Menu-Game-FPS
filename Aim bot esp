@@ -18,7 +18,7 @@ FOVring.Position = Cam.ViewportSize / 2
 local isAiming = false
 local isBlatant = false
 local isMenuOpen = false
-local isESPEnabled = false -- Variabel baru untuk toggle ESP
+local isESPEnabled = false
 local currentTab = "Aim"
 local raycastParams = RaycastParams.new()
 raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
@@ -39,7 +39,7 @@ ScreenGui.Name = "AimbotUI"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.IgnoreGuiInset = true
 
--- Toggle button (always visible)
+-- Toggle button
 local ToggleButton = Instance.new("TextButton")
 ToggleButton.Size = UDim2.new(0, 50, 0, 50)
 ToggleButton.Position = UDim2.new(0, 20, 0, 20)
@@ -59,9 +59,9 @@ local ToggleCorner = Instance.new("UICorner")
 ToggleCorner.CornerRadius = UDim.new(1, 0)
 ToggleCorner.Parent = ToggleButton
 
--- Main menu frame (hidden by default)
+-- Main menu frame
 local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 300, 0, 260) -- Diperbesar untuk menampung toggle ESP
+MainFrame.Size = UDim2.new(0, 300, 0, 260)
 MainFrame.Position = UDim2.new(0.5, -150, 0.5, -130)
 MainFrame.BackgroundColor3 = backgroundColor
 MainFrame.BackgroundTransparency = 0.05
@@ -152,7 +152,7 @@ AimTab.Size = UDim2.new(0.5, -4, 1, 0)
 AimTab.Position = UDim2.new(0, 0, 0, 0)
 AimTab.BackgroundColor3 = accentColor
 AimTab.Text = "Aim"
-AimTab.TextColor3 = textColor
+AimTab.Text, Color3 = textColor
 AimTab.Font = Enum.Font.GothamSemibold
 AimTab.TextSize = 14
 AimTab.BorderSizePixel = 0
@@ -250,7 +250,7 @@ ESPToggleCorner.Parent = ESPToggle
 -- FOV slider
 local FOVContainer = Instance.new("Frame")
 FOVContainer.Size = UDim2.new(1, 0, 0, 60)
-FOVContainer.Position = UDim2.new(0, 0, 0, 150) -- Disesuaikan posisinya
+FOVContainer.Position = UDim2.new(0, 0, 0, 150)
 FOVContainer.BackgroundTransparency = 1
 FOVContainer.ZIndex = 3
 FOVContainer.Parent = AimContent
@@ -291,8 +291,6 @@ local FillCorner = Instance.new("UICorner")
 FillCorner.CornerRadius = UDim.new(0, 3)
 FillCorner.Parent = SliderFill
 
-local SliderKnob = Instance.new("Frame")
-SliderKnob.Size = UDim2.new(0, 16, 0, 16)
 local SliderKnob = Instance.new("Frame")
 SliderKnob.Size = UDim2.new(0, 16, 0, 16)
 SliderKnob.Position = UDim2.new(0, -8, 0.5, -8)
@@ -446,12 +444,13 @@ local function createESP(player)
     local head = character:FindFirstChild("Head")
     if not humanoid or not head then return end
 
-    -- Create Highlight
+    -- Create Highlight dengan AlwaysOnTop untuk menembus tembok
     local highlight = Instance.new("Highlight", character)
     highlight.FillColor = (player.TeamColor and player.TeamColor.Color) or Color3.fromRGB(255, 48, 51)
     highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
     highlight.FillTransparency = 0.5
     highlight.OutlineTransparency = 0
+    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
 
     -- Create BillboardGui
     local billboard = Instance.new("BillboardGui")
@@ -486,7 +485,7 @@ local function createESP(player)
 
     ESPObjects[player] = {highlight = highlight, billboard = billboard}
 
-    -- Update health and team color
+    -- Update health dan team color
     local connections = {}
     table.insert(connections, player:GetPropertyChangedSignal("TeamColor"):Connect(function()
         highlight.FillColor = (player.TeamColor and player.TeamColor.Color) or Color3.fromRGB(255, 48, 51)
@@ -508,7 +507,7 @@ local function createESP(player)
         end
     end))
 
-    -- Handle character respawn
+    -- Handle respawn karakter
     player.CharacterAdded:Connect(function(newChar)
         if ESPObjects[player] then
             ESPObjects[player].highlight:Destroy()
@@ -566,10 +565,12 @@ end
 local function getValidPlayers()
     local validPlayers = {}
     for _, otherPlayer in pairs(Players:GetPlayers()) do
-        if otherPlayer ~= Player and otherPlayer.Character and 
+        if otherPlayer ~= Player and 
+           otherPlayer.Character and 
            otherPlayer.Character:FindFirstChild("Humanoid") and
            otherPlayer.Character.Humanoid.Health > 0 and
-           otherPlayer.Character:FindFirstChild("Head") then
+           otherPlayer.Character:FindFirstChild("Head") and
+           otherPlayer.Team ~= Player.Team then -- Hanya targetkan tim berbeda
             table.insert(validPlayers, otherPlayer.Character)
         end
     end
